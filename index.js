@@ -12,7 +12,11 @@ const app = express();
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: ['https://kaykabugaagta.vercel.app'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  credentials: true
+}));
 
 // MongoDB Atlas connection string
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -28,9 +32,36 @@ mongoose.connect(MONGODB_URI)
     process.exit(1);
   });
 
+// Root route for testing
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Bookstore API is running',
+    endpoints: {
+      books: '/all_books',
+      users: '/users',
+      login: '/login',
+      register: '/register'
+    }
+  });
+});
+
 // Routes
 app.use(bookRouter);
 app.use(userRouter);
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    message: 'Something went wrong!',
+    error: process.env.NODE_ENV === 'production' ? {} : err.message
+  });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ message: 'Route not found' });
+});
 
 // Start server
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
